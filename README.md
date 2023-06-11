@@ -58,3 +58,15 @@ python -m torch.distributed.launch --nproc_per_node=4 top_tagging.py \
         --c_weight=0.005 --dropout=0.2 --weight_decay=0.01 \
         --exp_name=augerino --datadir ../data/top-tagging-converted --metric saved_metric/metric_augerino.pt
 ```
+
+## Cite
+```
+@article{yang2023generative,
+  title={Generative Adversarial Symmetry Discovery},
+  author={Yang, Jianke and Walters, Robin and Dehmamy, Nima and Yu, Rose},
+  booktitle={International Conference on Machine Learning},
+  organization={PMLR},
+  year={2023}
+}
+
+```
