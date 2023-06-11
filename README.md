@@ -1,5 +1,5 @@
 # Generative Adversarial Symmetry Discovery (LieGAN)
-Code for the ICML 2023 paper, Generative Adversarial Symmetry Discovery.
+Code for the ICML 2023 paper, [Generative Adversarial Symmetry Discovery](https://arxiv.org/abs/2302.00236).
 
 ## Experiments
 ### N-Body Trajectory
