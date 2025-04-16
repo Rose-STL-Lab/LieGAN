@@ -43,6 +43,14 @@ def train_lie_gan(
             # Configure input
             x = x.to(device)
             y = y.to(device)
+            if task == 'MNIST':
+                # randomly rotate x
+                with torch.no_grad():
+                    R = torch.FloatTensor([[0, -1, 0], [1, 0, 0], [0, 0, 0]]).to(device)
+                    theta = torch.randn(x.shape[0]).to(device) * math.pi / 2 - math.pi / 4
+                    g = torch.matrix_exp(torch.einsum('b,ij->bij', theta, R))
+                    grid = F.affine_grid(g[:, :-1], x.size())
+                    x = F.grid_sample(x, grid)
             # -----------------
             #  Train Generator
             # -----------------
@@ -58,6 +66,8 @@ def train_lie_gan(
                 g_reg = -torch.minimum(torch.abs((gx - x) / x).mean(), torch.FloatTensor([1.0]).to(device))
             elif reg_type == 'Li_norm':
                 g_reg = -torch.minimum(torch.norm(generator.getLi(), p=2, dim=None), torch.FloatTensor([generator.n_dim * generator.n_channel]).to(device))
+            elif reg_type == 'fourier':
+                g_reg = fourier_similarity(gx, x)
             else:
                 raise NotImplementedError
             g_reg = lamda * g_reg

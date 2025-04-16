@@ -54,3 +54,17 @@ def randomSO3Transform(x):
     z = torch.randn(x.shape[0], 3).to(x.device)
     g_z = torch.matrix_exp(torch.einsum('cjk,bc->bjk', L, z))
     return torch.einsum('bij,bkj->bki', g_z, x)
+
+def fourier_similarity(img1, img2, eps=1e-8):
+    if img1.ndim == 4:
+        img1 = img1.squeeze(1)
+    if img2.ndim == 4:
+        img2 = img2.squeeze(1)
+    fft1 = torch.fft.fftshift(torch.fft.fft2(img1), dim=(-2, -1))
+    fft2 = torch.fft.fftshift(torch.fft.fft2(img2), dim=(-2, -1))
+    log_mag1 = torch.log1p(torch.abs(fft1) + eps)
+    log_mag2 = torch.log1p(torch.abs(fft2) + eps)
+    log_mag1_flat = log_mag1.view(log_mag1.shape[0], -1)
+    log_mag2_flat = log_mag2.view(log_mag2.shape[0], -1)
+    sim = F.cosine_similarity(log_mag1_flat, log_mag2_flat, dim=-1)  # shape: (B,)
+    return sim.mean()

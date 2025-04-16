@@ -40,6 +40,13 @@ class LieGenerator(nn.Module):
                 self.mask = p @ self.mask @ p
                 self.Li = nn.Parameter(torch.randn(n_channel, n_dim, n_dim) * 0.01)
                 # nn.init.kaiming_normal_(self.Li)
+        elif args.g_init == 'affine':
+            self.Li = nn.Parameter(torch.rand(n_channel, n_dim, n_dim))
+            nn.init.kaiming_normal_(self.Li)
+            self.mask = torch.ones(n_dim, n_dim)
+            self.mask[2, :] = 0
+        else:
+            raise NotImplementedError
 
     def set_activated_channel(self, ch):
         self.activated_channel = ch
@@ -78,7 +85,7 @@ class LieGenerator(nn.Module):
         batch_size = x.shape[0]
         z = self.sample_coefficient(batch_size, x.device)
         Li = self.normalize_L() if self.args.normalize_Li else self.Li
-        if self.args.g_init in ['2*2_factorization', '4*4_factorization', ]:
+        if self.args.g_init in ['2*2_factorization', '4*4_factorization', 'affine', ]:
             g_z = torch.matrix_exp(torch.einsum('bj,jkl->bkl', z, Li * self.mask.to(x.device)))
         else:
             g_z = torch.matrix_exp(torch.einsum('bj,jkl->bkl', z, Li))
@@ -105,9 +112,12 @@ class LieGenerator(nn.Module):
             return affine_coord(torch.einsum('bjk,btk->btj', g_z, x), self.dummy_pos)
         elif tp == 'scalar':
             return x
+        elif tp == 'grid':
+            grid = F.affine_grid(g_z[:, :-1], x.shape, align_corners=True)
+            return F.grid_sample(x, grid, align_corners=True)
 
     def getLi(self):
-        if self.args.g_init in ['2*2_factorization', '4*4_factorization', ]:
+        if self.args.g_init in ['2*2_factorization', '4*4_factorization', 'affine', ]:
             return self.Li * self.mask.to(self.Li.device)
         else:
             return self.Li
@@ -155,3 +165,48 @@ class LieDiscriminatorEmb(nn.Module):
         xy = torch.cat((x, y), dim=1)
         validity = self.model(xy)
         return validity
+    
+
+# Modified from Augerino codebase: https://github.com/g-benton/learning-invariances
+class Expression(nn.Module):
+    def __init__(self, func):
+        super().__init__()
+        self.func = func
+
+    def forward(self, x):
+        return self.func(x)
+
+def ConvBNrelu(chin, chout, stride=1):
+    return nn.Sequential(
+        nn.Conv2d(chin, chout, 3, padding=1, stride=stride),
+        nn.BatchNorm2d(chout),
+        nn.ReLU()
+    )
+
+class LieDiscriminatorConv(nn.Module):
+    def __init__(self, chin=3, n_class=10, emb_size=128, k=128, dropout=True):
+        super().__init__()
+        self.net = nn.Sequential(
+            ConvBNrelu(chin,k),
+            ConvBNrelu(k,k),
+            ConvBNrelu(k,2*k),
+            nn.MaxPool2d(2),
+            nn.Dropout2d(.3) if dropout else nn.Sequential(),
+            ConvBNrelu(2*k,2*k),
+            nn.MaxPool2d(2),
+            nn.Dropout2d(.3) if dropout else nn.Sequential(),
+            ConvBNrelu(2*k,2*k),
+            nn.Dropout2d(.3) if dropout else nn.Sequential(),
+            Expression(lambda u: u.mean(-1).mean(-1)),
+        )
+        self.emb = nn.Embedding(n_class, emb_size)
+        self.lin = nn.Sequential(
+            nn.Linear(2*k + emb_size, 1),
+            nn.Sigmoid(),
+        )
+
+    def forward(self, x, y):
+        y = self.emb(y)
+        x = self.net(x)
+        xy = torch.cat((x, y), dim=1)
+        return self.lin(xy)

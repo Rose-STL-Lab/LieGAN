@@ -4,7 +4,7 @@ import numpy as np
 import argparse
 from torch.utils.data import DataLoader
 from dataset import *
-from gan import LieGenerator, LieDiscriminator, LieDiscriminatorEmb
+from gan import LieGenerator, LieDiscriminator, LieDiscriminatorEmb, LieDiscriminatorConv
 from train import train_lie_gan, train_lie_gan_incremental
 from baseline.sgan import Generator as SGAN_Generator
 
@@ -98,6 +98,11 @@ if __name__ == '__main__':
         n_dim = 3
         n_channel = 1
         d_input_size = 4
+    elif args.task == 'MNIST':
+        dataset, _ = get_rotated_MNIST()
+        n_dim = 3
+        n_channel = args.n_channel
+        chin = 1
     else:
         raise NotImplementedError
 
@@ -110,6 +115,8 @@ if __name__ == '__main__':
         generator = SGAN_Generator(n_dim, args).to(args.device)
     if args.task == 'top_tagging':
         discriminator = LieDiscriminatorEmb(d_input_size, n_class, emb_size).to(args.device)
+    elif args.task in ['MNIST', ]:
+        discriminator = LieDiscriminatorConv(chin).to(args.device)
     else:
         discriminator = LieDiscriminator(d_input_size).to(args.device)
     if args.model == 'lie':  # fix the coefficient distribution

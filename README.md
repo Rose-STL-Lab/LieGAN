@@ -66,6 +66,11 @@ python -m torch.distributed.launch --nproc_per_node=4 top_tagging.py \
         --exp_name=augerino --datadir ../data/top-tagging-converted --metric saved_metric/metric_augerino.pt
 ```
 
+### Rotated MNIST
+```
+python main_lagan.py --task MNIST --g_init affine --x_type grid --y_type scalar --lamda 0.1 --lr_g 2e-4 --reg_type fourier --num_epochs 15
+```
+
 ## Cite
 ```
 @article{yang2023generative,

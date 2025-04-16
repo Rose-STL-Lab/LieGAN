@@ -1,10 +1,47 @@
 import torch
 import numpy as np
 from torchvision import datasets, transforms
+import torchvision.transforms.functional as TF
+import torch.nn.functional as F
 from utils import *
 import pickle
 import pandas as pd
+import random
 
+
+# Rotated MNIST
+class RandRotShearTransform:
+    def __init__(self, rot_range=(-90, 90), shear_range_x=(-30, 30), shear_range_y=(-30, 30)):
+        self.rot_range = rot_range
+        self.shear_range_x = shear_range_x
+        self.shear_range_y = shear_range_y
+        
+    def __call__(self, x):
+        rot_angle = random.uniform(*self.rot_range)
+        shear_angle_x = random.uniform(*self.shear_range_x)
+        shear_angle_y = random.uniform(*self.shear_range_y)
+        # aff_generator = torch.FloatTensor([[0, -rot_angle + shear_angle_x, 0], [rot_angle + shear_angle_y, 0, 0], [0, 0, 0]])
+        # aff_transform = torch.matrix_exp(aff_generator)[None, :-1]
+        # grid = F.affine_grid(aff_transform, x[None].size())
+        # return F.grid_sample(x[None], grid)[0]
+        return TF.affine(x, angle=rot_angle, translate=(0, 0), scale=1, shear=(shear_angle_x, shear_angle_y))
+
+def get_rotated_MNIST(rot_range=(-45, 45)):
+    rt = transforms.Compose([
+        transforms.ToTensor(),
+        RandRotShearTransform(rot_range=rot_range, shear_range_x=(0, 0), shear_range_y=(0, 0)),
+        # transforms.ToTensor()
+    ])
+    try:
+        train_dataset = datasets.MNIST('./mnist', transform=rt, train=True)
+        test_dataset = datasets.MNIST('./mnist', transform=rt, train=False)
+    except RuntimeError:
+        train_dataset = datasets.MNIST('./mnist', transform=rt, train=True, download=True)
+        test_dataset = datasets.MNIST('./mnist', transform=rt, train=False, download=True)
+    return train_dataset, test_dataset
+
+
+# NBody
 class NBodyDataset(torch.utils.data.Dataset):
     def __init__(self, save_path='./data/hnn/2body-orbits-dataset.pkl', mode='train', trj_timesteps=50, input_timesteps=4, output_timesteps=1, extra_features=None, flatten=False, with_random_transform=False, nbody=2):
         with open(save_path, 'rb') as f:
@@ -63,6 +100,8 @@ class NBodyDataset(torch.utils.data.Dataset):
         else:
             return self.X[idx], self.y[idx]
 
+
+# Top Tagging
 class TopTagging(torch.utils.data.Dataset):
     def __init__(self, path='./data/top-tagging/train.h5', flatten=False, n_component=3, noise=0.0):
         super().__init__()
@@ -84,6 +123,7 @@ class TopTagging(torch.utils.data.Dataset):
         return self.X[idx], self.y[idx]
 
 
+# Synthetic function invariant to discrete rotations
 class DiscreteRotation(torch.utils.data.Dataset):
     def __init__(self, N=2000, k=7):
         self.X = np.random.randn(N, 3)
