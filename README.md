@@ -15,6 +15,11 @@ python main_augerino.py --g_init 2*2_factorization --lamda 1 --num_epochs 100
 python main_lagan.py --g_init 2*2_factorization --lamda 1 --sigma_init 1 --num_epochs 100 --model sgan
 ```
 
+To discover symmetry in a larger search space (Figure 3c), run the following:
+```
+python main_lagan.py --g_init 4*4_factorization --lamda 1e1 --sigma_init 3 --num_epochs 100
+```
+
 To run the prediction experiments for EMLP and data augmentation, refer to `emlp.ipynb` and `aug_pred.ipynb`. We have provided the discovery results used for these experiments in `./saved_model/results/`.
 
 As is stated in Section 5.2 in our paper, we need to slightly modify the EMLP implementation of SVD. It is located in line 307 of `emlp/reps/representation.py`, where we need to change the threshold from 1e-5 to larger values, like 5e-3.

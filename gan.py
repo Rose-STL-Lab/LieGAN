@@ -38,7 +38,7 @@ class LieGenerator(nn.Module):
                 p[4:6,2:4] = p[2:4,4:6] = torch.eye(2)
                 p[2:4,2:4] = p[4:6,4:6] = 0
                 self.mask = p @ self.mask @ p
-                self.Li = nn.Parameter(torch.randn(n_channel, n_dim, n_dim))
+                self.Li = nn.Parameter(torch.randn(n_channel, n_dim, n_dim) * 0.01)
                 # nn.init.kaiming_normal_(self.Li)
 
     def set_activated_channel(self, ch):

@@ -46,7 +46,7 @@ if __name__ == '__main__':
     parser.add_argument('--noise', type=float, default=0.0)
     # run settings
     parser.add_argument('--seed', type=int, default=42)
-    parser.add_argument('--gpu', type=str, default=0)
+    parser.add_argument('--gpu', type=int, default=0)
     parser.add_argument('--print_every', type=int, default=1)
     parser.add_argument('--save_path', type=str, default='saved_model')
     parser.add_argument('--save_name', type=str, default='default')
