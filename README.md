@@ -76,7 +76,7 @@ python main_lagan.py --task MNIST --g_init affine --x_type grid --y_type scalar 
 @article{yang2023generative,
   title={Generative Adversarial Symmetry Discovery},
   author={Yang, Jianke and Walters, Robin and Dehmamy, Nima and Yu, Rose},
-  booktitle={International Conference on Machine Learning},
+  journal={International Conference on Machine Learning},
   organization={PMLR},
   year={2023}
 }
